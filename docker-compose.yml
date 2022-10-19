@@ -1,0 +1,49 @@
+version: '3.8'
+
+networks:
+  default:
+    ipam:
+      config:
+        - subnet: 100.72.1.0/24
+
+services:
+  nginx-server:
+    image: nginx:latest
+    depends_on:
+      - app
+    environment:
+      CLIENT_MAX_BODY_SIZE: 120M
+    volumes:
+      - ./:/var/www
+      - ./docker/conf/nginx/nginx.conf:/etc/nginx/conf.d/default.conf
+      - ./docker/data/nginx:/var/log/nginx
+      - ./docker/conf/nginx/my_custom_proxy_settings.conf:/etc/nginx/conf.d/my_custom_proxy_settings.conf
+    command: [ nginx-debug, '-g', 'daemon off;' ]
+    networks:
+      default:
+        ipv4_address: 100.72.1.7
+
+  app:
+    build:
+      context: .
+      dockerfile: ./docker/Dockerfile
+    networks:
+      default:
+        ipv4_address: 100.72.1.2
+    depends_on:
+      - postgres
+      # Линкуем внешнюю папку с исходниками внутрь
+    volumes:
+      - ./:/var/www/
+      - ./docker/conf/nginx:/etc/nginx/sites-available
+      - ./docker/conf/nginx/z-overrides.conf:/etc/php/7.4/fpm/pool.d/z-overrides.conf
+
+  postgres:
+    image: postgres:9.5
+    environment:
+      - POSTGRES_PASSWORD=web
+      - POSTGRES_USER=web
+      - POSTGRES_DB=test
+    networks:
+      default:
+        ipv4_address: 100.72.1.3
