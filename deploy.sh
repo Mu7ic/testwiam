@@ -30,3 +30,5 @@ make up
 make composer
 
 make migrate
+echo 'site already ready click link below'
+echo -e 'http://test.local/'
